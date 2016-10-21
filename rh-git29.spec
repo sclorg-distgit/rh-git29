@@ -20,7 +20,7 @@
 Summary: Package that installs %{scl}
 Name: %{scl_name}
 Version: 2.3
-Release: 1%{?dist}
+Release: 4%{?dist}
 Group: Applications/File
 Source0: README
 Source1: LICENSE
@@ -52,6 +52,7 @@ Summary: Package shipping basic build configuration
 #FIXME: is it required?
 Requires: %{name}-runtime = %{version}
 Requires: scl-utils-build
+Requires: httpd24-scldevel
 Group: Applications/File
 
 %description build
@@ -96,6 +97,7 @@ cat >> %{buildroot}%{_scl_scripts}/enable << EOF
 export PATH=%{_bindir}\${PATH:+:\${PATH}}
 export MANPATH=%{_mandir}:\${MANPATH}
 export PERL5LIB=%{_scl_root}%{perl_vendorlib}\${PERL5LIB:+:\${PERL5LIB}}
+export LD_LIBRARY_PATH=/opt/rh/httpd24/root%{_root_libdir}\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}
 EOF
 
 # install generated man page
@@ -114,10 +116,13 @@ EOF
 # Simple copy of context from system root to DSC root.
 # In case new version needs some additional rules or context definition,
 # it needs to be solved.
-semanage fcontext -a -e %{_root_libexecdir}/git-core/git-daemon {_libexecdir}/git-core/git-daemon >/dev/null 2>&1 || :
 semanage fcontext -a -e / %{_scl_root} >/dev/null 2>&1 || :
+semanage fcontext -a -e %{_root_localstatedir}/git %{_localstatedir}/git >/dev/null 2>&1 || :
+semanage fcontext -a -e %{_root_sysconfdir}/git %{_sysconfdir}/git >/dev/null 2>&1 || :
 selinuxenabled && load_policy >/dev/null 2>&1 || :
 restorecon -R %{_scl_root} >/dev/null 2>&1 || :
+restorecon -R %{_localstatedir} >/dev/null 2>&1 || :
+restorecon -R %{_sysconfdir} >/dev/null 2>&1 || :
 
 %files
 # not files here
@@ -134,6 +139,16 @@ restorecon -R %{_scl_root} >/dev/null 2>&1 || :
 %{_root_sysconfdir}/rpm/macros.%{scl_name_base}-scldevel
 
 %changelog
+* Mon Aug 08 2016 Petr Stodulka <pstodulk@redhat.com> - 2.3-4
+- set LD_LIBRARY_PATH to use htppd24-libcurl in collection
+  Resolves: rhbz#1345897
+
+* Mon Aug 08 2016 Petr Stodulka <pstodulk@redhat.com> - 2.3-3
+- added requires on httpd24-scldevel (#1345897)
+
+* Mon Aug 08 2016 Petr Stodulka <pstodulk@redhat.com> - 2.3-2
+- fix SELinux contexts
+
 * Wed Jul 20 2016 Petr Stodulka <pstodulk@redhat.com> - 2.3-1
 - Initial commit
 - Resolves: #1293462
